@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo none > /sys/block/nvme0n1/queue/scheduler
+
+if [ -z $1 ] ;
+then
+	memshift=0
+else
+	memshift=$1
+fi
+
+insmod qblk.ko rb_size_shift=$memshift
+nvme lnvm create -d nvme0n1 -b 0 -e 127 -n qblkdev -t qblk
