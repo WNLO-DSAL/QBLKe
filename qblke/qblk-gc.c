@@ -664,12 +664,12 @@ int qblk_gc_init(struct qblk *qblk)
 /*
  * Calculate QBLKe GC memory consumptions.
  */
- 	pr_notice("%s, memory consumption of qblk->per_channel_gc is %lu Bytes\n",
- 					__func__, (sizeof(struct qblk_gc) + sizeof(struct task_struct) * 2) * nr_chnls);
-	pr_notice("%s, memory consumption for other gc components is %lu Bytes\n",
-					__func__,
-					sizeof(qblk->gc_enabled) + sizeof(qblk->gc_active_lock) +
-					sizeof(qblk->gc_active_size) + qblk->gc_active_size);
+ 	//pr_notice("%s, memory consumption of qblk->per_channel_gc is %lu Bytes\n",
+ 	//				__func__, (sizeof(struct qblk_gc) + sizeof(struct task_struct) * 2) * nr_chnls);
+	//pr_notice("%s, memory consumption for other gc components is %lu Bytes\n",
+	//				__func__,
+	//				sizeof(qblk->gc_enabled) + sizeof(qblk->gc_active_lock) +
+	//				sizeof(qblk->gc_active_size) + qblk->gc_active_size);
 
 	return 0;
 fail_free_gcline:

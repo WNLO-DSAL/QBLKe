@@ -505,8 +505,8 @@ static void qblk_set_provision(struct qblk * qblk)
 	qblk->rl.rb_budget = budget = (total_buf_entries + nr_chnls - 1) / nr_chnls;
 	rb_windows = budget / QBLK_MAX_REQ_ADDRS;
 	qblk->rl.rb_windows_pw = get_count_order(rb_windows);
-	pr_notice("%s, rb_size_shift=%u rb_budget=%u rb_windows=%u rb_window_pw=%u\n",
-					__func__, rb_size_shift, budget, rb_windows, qblk->rl.rb_windows_pw);
+	//pr_notice("%s, rb_size_shift=%u rb_budget=%u rb_windows=%u rb_window_pw=%u\n",
+	//				__func__, rb_size_shift, budget, rb_windows, qblk->rl.rb_windows_pw);
 }
 
 static void qblk_rwb_mq_free(struct qblk *qblk, unsigned int qcount)
@@ -1567,9 +1567,9 @@ static void *qblk_init(struct nvm_tgt_dev *dev, struct gendisk **ptdisk,
 	queue_flag_set_unlocked(QUEUE_FLAG_NOMERGES, blk_queue);
 	
 	//logical bs=4096,physical bs=4096, maxhwsectors=8192, maxSeg=128, maxDevSec=0
-	pr_notice("qblk:logical bs=%u,physical bs=%u, maxhwsectors=%u, maxSeg=%u, maxDevSec=%u\n",
-		queue_physical_block_size(bqueue), queue_physical_block_size(bqueue),
-		queue_max_hw_sectors(bqueue), queue_max_segments(blk_queue),blk_queue->limits.max_dev_sectors);
+	//pr_notice("qblk:logical bs=%u,physical bs=%u, maxhwsectors=%u, maxSeg=%u, maxDevSec=%u\n",
+	//	queue_physical_block_size(bqueue), queue_physical_block_size(bqueue),
+	//	queue_max_hw_sectors(bqueue), queue_max_segments(blk_queue),blk_queue->limits.max_dev_sectors);
 
 	ret = qblk_init_writers(qblk, nr_rb);
 	if (ret) {

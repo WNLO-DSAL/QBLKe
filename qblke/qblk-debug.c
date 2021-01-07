@@ -1738,7 +1738,7 @@ void qblk_debug_init(struct qblk *qblk)
 	qblk->status_size = status_size = sizeof(struct qblk_status_header) +
 					nr_rb * sizeof(struct qblk_status_rb) +
 					nr_chnls * sizeof(struct qblk_status_chnl);
-	pr_notice("%s, status_size=%u\n", __func__, status_size);
+	//pr_notice("%s, status_size=%u\n", __func__, status_size);
 
 #ifdef DO_PER_RB_ACCOUNTING
 	qblk->prb_accounting = alloc_percpu(struct qblk_per_rb_accounting);
