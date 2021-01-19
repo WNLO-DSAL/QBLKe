@@ -88,6 +88,21 @@ void qblk_percpu_dma_free(struct qblk *qblk, int cpuid, void *addr,
 
 #endif
 
+#ifdef QBLKe_STAT_LINE_ERASECOUNT
+static void qblk_stat_erase_count(struct qblk *qblk, struct ppa_addr ppa)
+{
+	struct qblk_line *line = qblk_ppa_to_structline(qblk, ppa);
+
+	if (!qblk_ppa_to_posinsidechnl(ppa))
+		atomic64_inc(&line->erase_count);
+}
+
+#else
+static void qblk_stat_erase_count(struct qblk *qblk, struct ppa_addr ppa)
+{
+}
+#endif
+
 static void qblk_bio_map_addr_endio(struct bio *bio)
 {
 	bio_put(bio);
@@ -385,7 +400,7 @@ static void qblk_line_mark_bb(struct work_struct *work)
 	ret = nvm_set_tgt_bb_tbl(dev, ppa, 1, NVM_BLK_T_GRWN_BAD);
 	if (ret) {
 		struct qblk_line *line = qblk_ppa_to_structline(qblk, *ppa);
-		int pos = qblk_ppa_to_posinsidechnl(&dev->geo, *ppa);
+		int pos = qblk_ppa_to_posinsidechnl(*ppa);
 
 		pr_err("qblk: failed to mark bb, line:%d, pos:%d\n",
 				line->id, pos);
@@ -401,9 +416,7 @@ static void qblk_line_mark_bb(struct work_struct *work)
 static void qblk_mark_bb(struct qblk *qblk, struct qblk_line *line,
 			 struct ppa_addr *ppa)
 {
-	struct nvm_tgt_dev *dev = qblk->dev;
-	struct nvm_geo *geo = &dev->geo;
-	int pos = qblk_ppa_to_posinsidechnl(geo, *ppa);
+	int pos = qblk_ppa_to_posinsidechnl(*ppa);
 
 	pr_debug("qblk: erase failed: line:%d, pos:%d\n", line->id, pos);
 	atomic_long_inc(&qblk->erase_failed);
@@ -471,6 +484,7 @@ int qblk_blk_erase_sync(struct qblk *qblk, struct ppa_addr ppa)
 out:
 	rqd.private = qblk;
 	__qblk_end_io_erase(qblk, &rqd);
+	qblk_stat_erase_count(qblk, ppa);
 	return ret;
 }
 
@@ -503,6 +517,7 @@ int qblk_blk_erase_async(struct qblk *qblk, struct ppa_addr ppa)
 					ppa.ppa);
 	}
 
+	qblk_stat_erase_count(qblk, ppa);
 	return err;
 }
 
@@ -1213,8 +1228,7 @@ void qblk_mark_rq_luns(struct qblk *qblk,
 			struct ppa_addr *ppa_list,
 			unsigned long *lun_bitmap)
 {
-	struct nvm_geo *geo = &qblk->dev->geo;
-	int pos = qblk_ppa_to_posinsidechnl(geo, ppa_list[0]);
+	int pos = qblk_ppa_to_posinsidechnl(ppa_list[0]);
 
 	//pr_notice("%s,nr_ppa=%d,lunBitmap=0x%lx,pos=%d\n",__func__,nr_ppas,*lun_bitmap,pos);
 
@@ -1763,7 +1777,7 @@ next_rq:
 
 	for (i = 0; i < rqd.nr_ppas; ) {
 		struct ppa_addr ppa = offset_in_line_to_gen_ppa(qblk, paddr, chi->ch_index, id);
-		int pos = qblk_ppa_to_posinsidechnl(geo, ppa);
+		int pos = qblk_ppa_to_posinsidechnl(ppa);
 		int read_type = QBLK_READ_RANDOM;
 
 		if (qblk_io_aligned(qblk, rq_ppas))
@@ -1781,7 +1795,7 @@ next_rq:
 			}
 
 			ppa = offset_in_line_to_gen_ppa(qblk, paddr, chi->ch_index, id);
-			pos = qblk_ppa_to_posinsidechnl(geo, ppa);
+			pos = qblk_ppa_to_posinsidechnl(ppa);
 		}
 
 		if (qblk_boundary_paddr_checks(qblk, paddr + min)) {

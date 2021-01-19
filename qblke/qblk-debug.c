@@ -982,6 +982,9 @@ static void __print_line_info(struct qblk *qblk,
 
 	pr_notice("left_eblks(Blocks left for erasing)=%u\n", atomic_read(&line->left_eblks));
 	pr_notice("left_seblks(Blocks left for sync erasing)=%u\n", atomic_read(&line->left_seblks));
+#ifdef QBLKe_STAT_LINE_ERASECOUNT
+	pr_notice("Erase Count=%lu\n", atomic64_read(&line->erase_count));
+#endif
 	pr_notice("left_msecs(Sectors left for mapping)=%d\n", line->left_msecs);
 	pr_notice("vsc=%d\n", qblk_line_vsc(line));
 	pr_notice("nr_valid_lbas=%u\n", line->nr_valid_lbas);

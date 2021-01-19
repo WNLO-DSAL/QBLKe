@@ -552,12 +552,10 @@ static int qblk_submit_io_set(struct qblk *qblk,
 		/* Submit erase for next data line */
 		if (qblk_blk_erase_async(qblk, erase_ppa)) {
 			struct qblk_line *e_line = qblk_line_get_erase(chi);
-			struct nvm_tgt_dev *dev = qblk->dev;
-			struct nvm_geo *geo = &dev->geo;
 			int bit;
 
 			atomic_inc(&e_line->left_eblks);
-			bit = qblk_ppa_to_posinsidechnl(geo, erase_ppa);
+			bit = qblk_ppa_to_posinsidechnl(erase_ppa);
 			WARN_ON(!test_and_clear_bit(bit, e_line->erase_bitmap));
 		}
 	}

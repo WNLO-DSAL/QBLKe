@@ -933,7 +933,7 @@ static int qblk_bb_line(struct qblk *qblk, struct qblk_line *line,
 		rlun = &qblk->luns[qblk_chlun_to_lunidx(geo, ch_idx, i)];
 		if (rlun->bb_list[line->id] == NVM_BLK_T_FREE)
 			continue;
-		set_bit(qblk_ppa_to_posinsidechnl(geo, rlun->bppa), line->blk_bitmap);
+		set_bit(qblk_ppa_to_posinsidechnl(rlun->bppa), line->blk_bitmap);
 		bb_cnt++;
 	}
 
@@ -1111,6 +1111,10 @@ static int qblk_per_channel_init(struct qblk *qblk,
 		line->gc_group = QBLK_LINEGC_NONE;
 		line->vsc = &this_ch->vsc_list[i];
 		spin_lock_init(&line->lock);
+
+#ifdef QBLKe_STAT_LINE_ERASECOUNT
+		atomic64_set(&line->erase_count, 0);
+#endif
 
 		ret = qblk_alloc_line_bitmaps(qblk, line);
 		if (ret)

@@ -35,6 +35,8 @@
 
 #define QBLK_MIN_THRES (32)
 
+//#define QBLKe_STAT_LINE_ERASECOUNT
+
 #include <linux/blkdev.h>
 #include <linux/blk-mq.h>
 #include <linux/bio.h>
@@ -525,6 +527,10 @@ struct qblk_line {
 	struct kref ref;		/* Write buffer L2P references */
 
 	spinlock_t lock;		/* Necessary for invalid_bitmap only */
+
+#ifdef QBLKe_STAT_LINE_ERASECOUNT
+	atomic64_t erase_count;
+#endif
 
 };
 #define QBLK_DATA_LINES 4
@@ -1032,8 +1038,7 @@ static inline int qblk_ppa_to_pos(struct nvm_geo *geo,
 }
 #endif
 
-static inline int qblk_ppa_to_posinsidechnl(struct nvm_geo *geo,
-				struct ppa_addr p)
+static inline int qblk_ppa_to_posinsidechnl(struct ppa_addr p)
 {
 	return p.g.lun;
 }

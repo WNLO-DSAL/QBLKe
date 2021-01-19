@@ -107,8 +107,6 @@ void qblk_map_erase_rq(struct qblk *qblk,
 		    unsigned int valid_secs, struct ppa_addr *erase_ppa,
 		    unsigned int rb_count)
 {
-	struct nvm_tgt_dev *dev = qblk->dev;
-	struct nvm_geo *geo = &dev->geo;
 	struct qblk_metainfo *meta = &qblk->metainfo;
 	struct qblk_sec_meta *meta_list = rqd->meta_list;
 	struct qblk_line *e_line, *d_line;
@@ -125,7 +123,7 @@ void qblk_map_erase_rq(struct qblk *qblk,
 		qblk_map_page_data(qblk, chi, sentry + i, &rqd->ppa_list[i],
 					lun_bitmap, &meta_list[i], map_secs, rb_count);
 
-		erase_lun = qblk_ppa_to_posinsidechnl(geo, rqd->ppa_list[i]);
+		erase_lun = qblk_ppa_to_posinsidechnl(rqd->ppa_list[i]);
 
 		/* line can change after page map. We might also be writing the
 		 * last line.
