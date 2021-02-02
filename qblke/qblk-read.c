@@ -32,9 +32,6 @@ static int qblk_read_from_cache(struct qblk *qblk, void *kaddr,
 	BUG_ON(!qblk_addr_in_cache(ppa));
 #endif
 
-#ifdef CONFIG_NVM_DEBUG
-	BUG_ON(pos >= READ_ONCE(rb->boundary));
-#endif
 	entry = qblk_rb_entry_by_index(qblk, rb, pos);
 	w_ctx = &entry->w_ctx;
 	spin_lock(&rb->w_lock);
