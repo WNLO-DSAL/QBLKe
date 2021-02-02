@@ -970,6 +970,18 @@ static void qblk_test_erase(struct qblk *qblk,char *usrCommand)
 	return;
 }
 
+/* usage: "h @chnl @new_high"*/
+static void qblk_set_rlhigh(struct qblk *qblk, char *usrCommand)
+{
+	int ch_idx, newhigh;
+	struct qblk_per_chnl_rl *rl;
+
+	sscanf(usrCommand, "%d%d", &ch_idx, &newhigh);
+	rl = &qblk->ch[ch_idx].per_ch_rl;
+	rl->high = newhigh;
+	rl->high_pw = get_count_order(newhigh);
+}
+
 
 static void __print_line_info(struct qblk *qblk,
 					int ch_idx, int line_id)
@@ -1532,6 +1544,10 @@ static ssize_t qblkDebug_write(struct file *file,
 	case 'g':
 		pr_notice("%s, g\n", __func__);
 		qblk_printGlobalRlInfo(qblk);
+		break;
+	case 'h':
+		pr_notice("%s, h\n", __func__);
+		qblk_set_rlhigh(qblk, &usrCommand[1]);
 		break;
 	case 'p':
 		if(usrCommand[1] == 'd') {
