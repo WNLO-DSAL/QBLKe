@@ -7,5 +7,5 @@ files=`ls $path`
 for filename in $files
 do
 	echo cp -r kernel_patch/$filename $kernelSource/
-	yes | cp -r kernel_patch/$filename $kernelSource/ 2>/dev/null
+	yes | cp -r kernel_patch/$filename $kernelSource/
 done
