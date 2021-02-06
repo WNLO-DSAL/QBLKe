@@ -49,7 +49,7 @@ To get our pre-built image, simply download all the released files into a folder
 
 ```
 cd QBLKe_image_dir
-cat ./xa* > QBLKe_image.tar.gz
+cat ./x* > QBLKe_image.tar.gz
 tar -zxvf QBLKe_image.tar.gz
 ```
 
