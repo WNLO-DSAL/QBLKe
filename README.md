@@ -7,7 +7,11 @@ An OCSSD host-based FTL.
 
 If you do not have an Open Channel SSD hardware, you can use [FEMU](https://github.com/ucare-uchicago/femu) to emulate an Open Channel SSD for your QEMU virtual machine. If you choose to use FEMU, we recommend FEMU commitID [783d4fb4ce46e0e10ef83d48046566cbba1e6b6d](https://github.com/ucare-uchicago/FEMU/commit/783d4fb4ce46e0e10ef83d48046566cbba1e6b6d).
 
+We provide an example FEMU startup script `QBLKe64.sh` in the `tools` directory. Please modify to fit your configurations before running.
+
 2. Download Linux kernel source. Checkout to version 4.16.0.
+
+If your kernel is cloned from `https://github.com/torvalds/linux`, the commitID of 4.16.0 should be 0adb32858b0bddf4ada5f36.
 
 3. If you are using FEMU, do the additional tweaks described in [https://github.com/ucare-uchicago/FEMU/wiki/FEMU-Best-Practice](https://github.com/ucare-uchicago/FEMU/wiki/FEMU-Best-Practice).
 
@@ -28,7 +32,7 @@ cd QBLKe
 ./cpFiles.sh
 ```
 
-6. Build the kernel. Don't forget to enable lightNVM(NVM=y) and disable pblk(NVM_PBLK=n). Restart and login to the new kernel.
+6. Build the kernel. Don't forget to enable lightNVM(`NVM=y`) and disable pblk(`NVM_PBLK=n`). Restart and login to the new kernel.
 
 7. Build QBLKe.
 
@@ -37,8 +41,18 @@ cd QBLKe/qblke
 make -j16
 ```
 
-8. Run QBLKe. The shell script "install.sh" in the `qblke` folder shows an example of using QBLKe.
+8. Install nvme cli.
 
+```
+git clone https://github.com/linux-nvme/nvme-cli
+cd nvme-cli
+make
+make install
+```
+
+9. Run QBLKe. The shell script "install.sh" in the `qblke` folder shows an example of using QBLKe.
+
+You will get a block device in `/dev/qblkdev`. Then you can play with it using mkfs or fio.
 
 
 ## Pre-built FEMU image
