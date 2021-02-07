@@ -63,7 +63,7 @@ Another way to try QBLKe is to use our pre-built FEMU image.
 
 * Via Baidu Netdisk: [Link](https://pan.baidu.com/s/1GTU4uQR_zP-C1XgtCgSN3g) code:2283
 
-* More ways are available in the future.
+* More ways will be available in the future.
 
 **How to use the pre-built FEMU image**
 
