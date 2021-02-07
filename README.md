@@ -3,45 +3,55 @@ An OCSSD host-based FTL.
 
 ## Run QBLKe
 
-1. QBLKe is an Open Channel SSD(OCSSD) driver. So, your server should have an Open Channel SSD which supports [Open Channel SSD specification 1.2](https://openchannelssd.readthedocs.io/en/latest/specification/).
+**1. Prerequisites**
+
+QBLKe is an Open Channel SSD(OCSSD) driver. So, your server should have an Open Channel SSD which supports [Open Channel SSD specification 1.2](https://openchannelssd.readthedocs.io/en/latest/specification/).
 
 If you do not have an Open Channel SSD hardware, you can use [FEMU](https://github.com/ucare-uchicago/femu) to emulate an Open Channel SSD for your QEMU virtual machine. If you choose to use FEMU, we recommend FEMU commitID [783d4fb4ce46e0e10ef83d48046566cbba1e6b6d](https://github.com/ucare-uchicago/FEMU/commit/783d4fb4ce46e0e10ef83d48046566cbba1e6b6d).
 
 We provide an example FEMU startup script `QBLKe64.sh` in the `tools` directory. Please modify to fit your configurations before running.
 
-2. Download Linux kernel source. Checkout to version 4.16.0.
+**2. Linux Kernel.**
+
+Currently, QBLKe is based on Linux 4.16.0.
 
 If your kernel is cloned from `https://github.com/torvalds/linux`, the commitID of 4.16.0 should be 0adb32858b0bddf4ada5f36.
 
-3. If you are using FEMU, do the additional tweaks described in [https://github.com/ucare-uchicago/FEMU/wiki/FEMU-Best-Practice](https://github.com/ucare-uchicago/FEMU/wiki/FEMU-Best-Practice).
-
-4. Download QBLKe.
+**3. Download QBLKe.**
 
 ```
 git clone https://github.com/WNLO-DSAL/QBLKe
 ```
 
-5. Apply QBLKe's kernel patch.
+**4. Tweaks for FEMU**
+
+If you are using FEMU, do the additional tweaks described in [https://github.com/ucare-uchicago/FEMU/wiki/FEMU-Best-Practice](https://github.com/ucare-uchicago/FEMU/wiki/FEMU-Best-Practice).
+
+**5. Apply QBLKe's kernel patch.**
 
 QBLKe relys on the lightNVM infrastructure, but we changed some interface between lightNVM and device driver. So, you may need to overwrite some files. (e.g. core.c)
 
-If your linux kernel source resides in /usr/src/kernels/linux, you can use our script to copy files.
+If your linux kernel source resides in `/usr/src/kernels/linux`, you can use our script to copy files.
 
 ```
 cd QBLKe
 ./cpFiles.sh
 ```
 
-6. Build the kernel. Don't forget to enable lightNVM(`NVM=y`) and disable pblk(`NVM_PBLK=n`). Restart and login to the new kernel.
+**6. Build kernel.**
 
-7. Build QBLKe.
+Here's [a nice article from kernelnewbies](https://kernelnewbies.org/KernelBuild) for buiding instructions.
+
+Don't forget to enable lightNVM(`NVM=y`) and disable pblk(`NVM_PBLK=n`). After compilation, restart and login to the new kernel.
+
+**7. Build QBLKe.**
 
 ```
 cd QBLKe/qblke
 make -j16
 ```
 
-8. Install nvme cli.
+**8. Install nvme cli.**
 
 ```
 git clone https://github.com/linux-nvme/nvme-cli
@@ -50,7 +60,9 @@ make
 make install
 ```
 
-9. Run QBLKe. The shell script "install.sh" in the `qblke` folder shows an example of using QBLKe.
+**9. Run QBLKe.**
+
+The shell script "install.sh" in the `qblke` folder shows an example of using QBLKe.
 
 You will get a block device in `/dev/qblkdev`. Then you can play with it using mkfs or fio.
 
