@@ -57,9 +57,17 @@ You will get a block device in `/dev/qblkdev`. Then you can play with it using m
 
 ## Pre-built FEMU image
 
-If you would like to try QBLKe using our pre-built FEMU image, you can download it from the release page.
-Since github only accepts less than 2GiB files, we split our compacted file into small files.
-To get our pre-built image, simply download all the released files into a folder, say `QBLKe_image_dir`.
+Another way to try QBLKe is to use our pre-built FEMU image.
+
+**How to download**
+
+* Via Baidu Netdisk: [Link](https://pan.baidu.com/s/1GTU4uQR_zP-C1XgtCgSN3g) code:2283
+
+* More ways are available in the future.
+
+**How to use the pre-built FEMU image**
+
+We splitted our compacted image into several parts. So, the first thing to do is to concatenate the splitted files and then extract the files.
 
 ```
 cd QBLKe_image_dir
@@ -69,5 +77,4 @@ tar -zxvf QBLKe_image.tar.gz
 
 You will get three files: `ImageUsage.md`, `QBLKe64.sh`, and `QBLKeImage.qcow2`.
 
-Follow the instructions in `ImageUsage.md` to run the VM.
-
+Then, follow the instructions in `ImageUsage.md` to run the VM.
