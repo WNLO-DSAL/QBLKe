@@ -94,5 +94,5 @@ Then, follow the instructions in `ImageUsage.md` to run the VM.
 **FYI**
 
 1. DON"T use the latest version of FEMU (due to the OCSSD spec issue). Use the one stated above.
-2. By default, the QBLKe64.sh creates a VM with 32 cpus, 8GiB memory, and 64GiB OCSSD (which is emulated using host memory). Make sure your host machine has enough resource before using it. You can change the settings by modifying the script.
+2. By default, the `QBLKe64.sh` creates a VM with 32 cpus, 8GiB memory, and 64GiB OCSSD (which is emulated using host memory). Make sure your host machine has enough resource before using it. You can change the settings by modifying the script.
 
