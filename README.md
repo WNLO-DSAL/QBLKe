@@ -75,6 +75,8 @@ Another way to try QBLKe is to use our pre-built FEMU image.
 
 * Via Baidu Netdisk: [Link](https://pan.baidu.com/s/1GTU4uQR_zP-C1XgtCgSN3g) code:2283
 
+* Go to the release page of this repo [link](https://github.com/WNLO-DSAL/QBLKe/releases/tag/femu_image). Download all the files starts with "x", and place them in a directory named "QBLKe_image_dir". A sha1 file `QBLKe_image.tar.gz.sha1` is also available to check the integrity (See below).
+
 * More ways will be available in the future.
 
 **How to use the pre-built FEMU image**
@@ -84,6 +86,17 @@ We splitted our compacted image into several parts. So, the first thing to do is
 ```
 cd QBLKe_image_dir
 cat ./x* > QBLKe_image.tar.gz
+```
+
+You can check the integrity of QBLKe_image.tar.gz by:
+
+```
+sha1sum QBLKe_image.tar.gz
+```
+
+Extract files:
+
+```
 tar -zxvf QBLKe_image.tar.gz
 ```
 
