@@ -798,23 +798,22 @@ blk_status_t qblk_rq_write_to_cache(struct qblk *qblk,
 			max_payload_pgs = writeUserRet - qblk->min_write_pgs;
 
 			/* We only split bios that exceed ringBuffer's capacity */
-			if (nr_entries <= max_payload_pgs)
-				return BLK_STS_RESOURCE;
+			if (nr_entries > max_payload_pgs) {
+				//pr_notice("%s, split bio-maxPayloadPgs, %d\n", __func__, max_payload_pgs);
+				max_payload_pgs >>= 1;
+				//pr_notice("%s, split bio-actualSplit, %d\n", __func__, max_payload_pgs);
+				
+				newbio = bio_split(bio,
+							max_payload_pgs << 3,
+							GFP_ATOMIC, q->bio_split);
+				//bio_chain(newbio, bio);
+				newbio->bi_opf |= REQ_NOMERGE;
+				newbio->bi_next = bio->bi_next;
+				bio->bi_next = newbio;
+				//qblk_debug_printBioStatus(newbio);
+				//qblk_debug_printBioStatus(bio);
+			}
 
-			//pr_notice("%s, split bio-maxPayloadPgs, %d\n", __func__, max_payload_pgs);
-			max_payload_pgs >>= 1;
-			//pr_notice("%s, split bio-actualSplit, %d\n", __func__, max_payload_pgs);
-			
-			newbio = bio_split(bio,
-						max_payload_pgs << 3,
-						GFP_ATOMIC, q->bio_split);
-			//bio_chain(newbio, bio);
-			newbio->bi_opf |= REQ_NOMERGE;
-			newbio->bi_next = bio->bi_next;
-			bio->bi_next = newbio;
-			//qblk_debug_printBioStatus(newbio);
-			//qblk_debug_printBioStatus(bio);
-			
 			return BLK_STS_RESOURCE;
 		
 		}
