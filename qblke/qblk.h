@@ -298,8 +298,6 @@ struct qblk_queue {
 };
 
 struct qblk_mq_cmd {
-	struct request *gb_req;
-	struct qblk_queue *qblkQueue;
 	blk_status_t error;
 };
 

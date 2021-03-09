@@ -159,8 +159,6 @@ static blk_status_t qblk_queue_rq(struct blk_mq_hw_ctx *hctx,
 	//unsigned long flags;
 	blk_status_t ret;
 
-	qblk_cmd->gb_req = bd->rq;
-	qblk_cmd->qblkQueue = pq;
 	qblk_cmd->error = BLK_STS_OK;
 
 	blk_mq_start_request(bd->rq);
