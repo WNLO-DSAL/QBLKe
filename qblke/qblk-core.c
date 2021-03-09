@@ -202,10 +202,6 @@ void __qblk_map_invalidate(struct qblk *qblk,
 	}
 #endif
 
-	/* Lines being reclaimed (GC'ed) cannot be invalidated. Before the L2P
-	 * table is modified with reclaimed sectors, a check is done to endure
-	 * that newer updates are not overwritten.
-	 */
 #if 0
 	pr_notice("%s, ch[%d], line[%d], off[%llu]\n",
 	 					__func__, chi->ch_index,
@@ -213,7 +209,19 @@ void __qblk_map_invalidate(struct qblk *qblk,
 #endif
 
 	spin_lock_irqsave(&line->lock, flags);
-	WARN_ON(line->state == QBLK_LINESTATE_FREE);
+
+	if (line->state == QBLK_LINESTATE_FREE) {
+		/* If we find that the line state is free, just return.
+		 * This may happen when a user update invalidate a ppa while the line was
+		 * GC'ed.
+		 * Lines being reclaimed (GC'ed) cannot be invalidated.
+		 * GC thread will make sure that it won't overwrite the L2P. Before the L2P
+		 * table is modified with reclaimed sectors, a check is done to endure
+		 * that newer updates are not overwritten.
+		 */
+		spin_unlock_irqrestore(&line->lock, flags);
+		return;
+	}
 
 	if (test_and_set_bit(offset_in_line, line->invalid_bitmap)) {
 		WARN_ONCE(1, "qblk: double invalidate\n");
