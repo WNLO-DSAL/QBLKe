@@ -289,7 +289,6 @@ enum {
 
 
 struct qblk_queue {
-	struct qblk_rb *rb;
 	struct blk_mq_hw_ctx *hctx;
 	unsigned int hctx_idx;
 	atomic_t map_chnl;

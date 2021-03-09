@@ -41,7 +41,6 @@ static int qblk_init_hctx(struct blk_mq_hw_ctx *hctx, void *data,
 	//initialize pq
 	pq->hctx = hctx;
 	pq->hctx_idx = hctx_idx;
-	pq->rb = qblk_get_rb_by_cpuid(qblk, hctx_idx);
 
 	atomic_set(&pq->map_chnl, hctx_idx % geo->nr_chnls);
 	atomic_set(&pq->inflight_write_secs, 0);

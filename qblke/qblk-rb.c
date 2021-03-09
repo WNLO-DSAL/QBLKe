@@ -755,7 +755,7 @@ blk_status_t qblk_rq_write_to_cache(struct qblk *qblk,
 	int writeUserRet;
 	struct bio *bio, *newbio;
 	unsigned int rbIndex = pq->hctx_idx;
-	struct qblk_rb *ringBuffer = pq->rb;
+	struct qblk_rb *ringBuffer = qblk_get_rb_by_cpuid(qblk, rbIndex);
 	sector_t lba;
 	int nr_entries;
 	int max_payload_pgs;
