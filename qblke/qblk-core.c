@@ -192,6 +192,16 @@ void __qblk_map_invalidate(struct qblk *qblk,
 	struct list_head *move_list = NULL, *old_list, *new_list;
 	unsigned long flags;
 
+#ifdef QBLKe_DEBUG
+	struct qblk_metainfo *meta = &qblk->metainfo;
+
+	if(offset_in_line >= meta->sec_per_chline) {
+		pr_err("%s, offset_in_line=%llu, meta->sec_per_chline=%u\n",
+					__func__, offset_in_line, meta->sec_per_chline);
+		BUG();
+	}
+#endif
+
 	/* Lines being reclaimed (GC'ed) cannot be invalidated. Before the L2P
 	 * table is modified with reclaimed sectors, a check is done to endure
 	 * that newer updates are not overwritten.
@@ -201,6 +211,7 @@ void __qblk_map_invalidate(struct qblk *qblk,
 	 					__func__, chi->ch_index,
 	 					line->id, offset_in_line);
 #endif
+
 	spin_lock_irqsave(&line->lock, flags);
 	WARN_ON(line->state == QBLK_LINESTATE_FREE);
 
