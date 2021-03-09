@@ -3,6 +3,8 @@
 
 //#define QBLKe_DEBUG
 
+#define QBLKE_WRITE_RETRY
+
 //Uncomment if we need to measure func latency via bcc
 //#define QBLKE_FUNCLATENCY
 
@@ -282,6 +284,7 @@ enum {
 struct qblk_queue {
 	struct blk_mq_hw_ctx *hctx;
 	unsigned int hctx_idx;
+	unsigned int retry_idx;
 	atomic_t map_chnl;
 	atomic_t inflight_write_secs;
 	int wbchnl;

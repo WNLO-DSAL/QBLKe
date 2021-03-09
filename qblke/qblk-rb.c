@@ -761,10 +761,16 @@ blk_status_t qblk_rq_write_to_cache(struct qblk *qblk,
 	int max_payload_pgs;
 	int endreq = 1;
 
+#ifdef QBLKE_WRITE_RETRY
+	int retried = 0;
+#endif
+
 	__rq_for_each_bio(bio, req) {
 		lba = qblk_get_lba(bio);
 		nr_entries = qblk_get_secs(bio);
-
+#ifdef QBLKE_WRITE_RETRY
+write_retry:
+#endif
 		//pr_notice("write command, rbIndex=%u, lba=%lu, nrEntries=%d\n",rbIndex,lba,nr_entries);
 
 		/* Update the write buffer head (mem) with the entries that we can
@@ -786,6 +792,17 @@ blk_status_t qblk_rq_write_to_cache(struct qblk *qblk,
 			//pr_notice("%s,return with 1(Rate limiter may not insert)\n", __func__);
 			return BLK_STS_RESOURCE;
 		default:
+
+#ifdef QBLKE_WRITE_RETRY
+			if (!retried) {
+				rbIndex = pq->retry_idx;
+				ringBuffer = qblk_get_rb_by_cpuid(qblk, rbIndex);
+				retried = 1;
+				goto write_retry;
+			}
+			pq->retry_idx = (pq->retry_idx + 1)%qblk->nr_queues;
+#endif
+
 			/* In case of not enough space inside ring buffer,
 			 * we should check whether our requested nr_engries
 			 * is too large.
