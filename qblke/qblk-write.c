@@ -212,7 +212,6 @@ static void qblk_end_io_write(struct nvm_rq *rqd)
 	if (rqd->error) {
 		qblk_log_write_err(qblk, rqd);
 		return;
-		//return pblk_end_w_fail(qblk, rqd);//-------
 	}
 #ifdef CONFIG_NVM_DEBUG
 	else
@@ -352,7 +351,7 @@ static inline bool qblk_valid_meta_ppa(struct qblk *qblk,
 	struct qblk_c_ctx *data_c_ctx = nvm_rq_to_pdu(data_rqd);
 
 	/* Schedule a metadata I/O that is half the distance from the data I/O
-	 * with regards to the number of LUNs forming the pblk instance. This
+	 * with regards to the number of LUNs forming the qblk instance. This
 	 * balances LUN conflicts across every I/O.
 	 *
 	 * When the LUN configuration changes (e.g., due to GC), this distance

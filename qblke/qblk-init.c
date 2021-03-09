@@ -1249,64 +1249,6 @@ static int qblk_lines_configure(struct qblk *qblk, int flags)
 	return ret;
 }
 
-static void qblk_re_init(struct qblk_reader_ring *rr, int index)
-{
-	struct qblk_r_ring_entry *entry = &rr->entries[index];
-
-	INIT_LIST_HEAD(&entry->vector_pairs);
-}
-
-static void qblk_stop_readers(struct qblk *qblk)
-{
-	int nr_cpu = num_possible_cpus();
-	int i;
-
-	for (i = 0; i < nr_cpu; i++) {
-		struct qblk_reader_ring *rr =
-				per_cpu_ptr(qblk->reader_rings, i);
-
-		kthread_stop(rr->rr_reader_ts);
-	}
-	free_percpu(qblk->reader_rings);
-}
-
-static int qblk_init_readers(struct qblk *qblk)
-{
-	int nr_cpu = num_possible_cpus();
-	int i, k;
-	char tsname[64];
-
-	qblk->reader_rings = alloc_percpu(struct qblk_reader_ring);
-	if (!qblk->reader_rings)
-		return -ENOMEM;
-
-	for (i = 0; i < nr_cpu; i++) {
-		struct qblk_reader_ring *rr =
-				per_cpu_ptr(qblk->reader_rings, i);
-
-		rr->qblk = qblk;
-		rr->head = rr->tail = 0;
-		for (k = 0; k < QBLKE_READER_RING_ENTRIES_PERCPU; k++)
-			qblk_re_init(rr, k);
-
-		sprintf(tsname, "qblk_rr_reader_%u", i);
-		rr->rr_reader_ts = kthread_create(qblk_rr_reader_thread_fn, rr, tsname);
-		if (!rr->rr_reader_ts)
-			goto out;
-		wake_up_process(rr->rr_reader_ts);
-	}
-	return 0;
-out:
-	while (i--) {
-		struct qblk_reader_ring *rr =
-				per_cpu_ptr(qblk->reader_rings, i);
-
-		kthread_stop(rr->rr_reader_ts);
-	}
-	free_percpu(qblk->reader_rings);
-	return -ENOMEM;
-}
-
 static void qblk_set_target_sema(struct qblk *qblk, struct ch_info *chi,
 									int chnl, int new_write_limited, int target_sema)
 {
@@ -1579,16 +1521,10 @@ static void *qblk_init(struct nvm_tgt_dev *dev, struct gendisk **ptdisk,
 		goto fail_free_lines;
 	}
 
-	ret  = qblk_init_readers(qblk);
-	if (ret) {
-		pr_err("qblk: could not initialize readers\n");
-		goto fail_stop_writer_mq;
-	}
-
 	ret = qblk_gc_init(qblk);
 	if (ret) {
 		pr_err("qblk: could not initialize gc\n");
-		goto fail_stop_readers;
+		goto fail_stop_writer_mq;
 	}
 
 	/* Check if we need to start GC */
@@ -1610,8 +1546,6 @@ out_stop_write_limiter:
 	qblk_write_limiter_exit(qblk);
 out_stop_gc:
 	qblk_gc_exit(qblk);
-fail_stop_readers:
-	qblk_stop_readers(qblk);
 fail_stop_writer_mq:
 	qblk_writers_stop(qblk, nr_rb);
 fail_free_lines:
@@ -1647,7 +1581,6 @@ static void qblk_tear_down(struct qblk *qblk)
 {
 	//FIXME: qblk_pipeline_stop(qblk);
 	flush_workqueue(qblk->bb_wq);
-	qblk_stop_readers(qblk);
 	qblk_writers_stop(qblk, qblk->nr_queues);
 	qblk_channels_free(qblk, qblk->dev->geo.nr_chnls);
 	qblk_rb_sync_all_l2p(qblk);
@@ -1701,37 +1634,14 @@ static struct nvm_tgt_type tt_qblk = {
 	.owner		= THIS_MODULE,
 };
 
-static int qblk_allocate_slab_caches(void)
-{
-	qblk_rv_cache = kmem_cache_create("qblk_rv_cache", sizeof(struct qblk_read_vector),
-				0, 0, NULL);
-	if (!qblk_rv_cache)
-		goto errout;
-
-	return 0;
-	kmem_cache_destroy(qblk_rv_cache);
-errout:
-	return -ENOMEM;
-}
-
-static void qblk_destroy_slab_caches(void)
-{
-	if (qblk_rv_cache)
-		kmem_cache_destroy(qblk_rv_cache);
-}
 static int __init qblk_module_init(void)
 {
-	if (qblk_allocate_slab_caches()) {
-		pr_err("qblk: can't initialize slabs\n");
-		return -ENOMEM;
-	}
 	return nvm_register_tgt_type(&tt_qblk);
 }
 
 static void qblk_module_exit(void)
 {
 	nvm_unregister_tgt_type(&tt_qblk);
-	qblk_destroy_slab_caches();
 }
 
 module_init(qblk_module_init);

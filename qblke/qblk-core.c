@@ -1053,31 +1053,14 @@ struct qblk_line *qblk_line_replace_data(struct qblk *qblk,
 	qblk_line_setup_metadata(newline, chi, &qblk->metainfo);
 
 	spin_unlock(&chi->free_lock);
-//retry_setup:
 	if (!qblk_line_init_metadata(qblk, chi, newline, cur)) {
-		/*
-		newline = pblk_line_retry(pblk, newline);//---
-		if (!newline){
-			pr_notice("Weird!,%s,line=%d\n",__func__,__LINE__);
-			goto out;
-		}
-
-		goto retry_setup;
-		*/
+		//TODO: Fix badline, or retry
 		pr_err("%s,line(%d),qblk_line_init_metadata() failed\n", __func__, __LINE__);
 			return NULL;
 	}
 
 	if (!qblk_line_init_bb(qblk, chi, newline, 1)) {
-#if 0
-		newline = pblk_line_retry(pblk, newline);//---
-		if (!newline){
-			pr_notice("Weird!,%s,line=%d\n",__func__,__LINE__);
-			goto out;
-		}
-
-		goto retry_setup;
-#endif
+		//TODO: Fix badline, or retry
 		pr_err("%s,line(%d), qblk init bb failed\n", __func__, __LINE__);
 			return NULL;
 	}
@@ -1649,25 +1632,6 @@ int qblk_submit_io_for_ioset(struct qblk *qblk, struct nvm_rq *rqd)
 	return nvm_submit_io(dev, rqd);
 }
 
-int qblk_submit_io_for_readerring(struct qblk *qblk, struct nvm_rq *rqd)
-{
-	struct nvm_tgt_dev *dev = qblk->dev;
-#ifdef QBLKe_DEBUG
-	int ret;
-#endif
-
-	atomic_inc(&qblk->inflight_io);
-
-#ifdef QBLKe_DEBUG
-	ret = qblk_check_io(qblk, rqd);
-	if (ret)
-		return ret;
-#endif
-
-	return nvm_submit_io(dev, rqd);
-}
-
-
 int qblk_submit_io_for_partialread(struct qblk *qblk, struct nvm_rq *rqd)
 {
 	struct nvm_tgt_dev *dev = qblk->dev;
@@ -1799,8 +1763,8 @@ next_rq:
 		}
 
 		if (qblk_boundary_paddr_checks(qblk, paddr + min)) {
-			pr_err("pblk: corrupt emeta line:%d\n",
-							line->id);
+			pr_err("qblk: %s, corrupt emeta line:%d\n",
+							__func__, line->id);
 			bio_put(bio);
 			ret = -EINTR;
 			goto free_rqd_dma;
@@ -2030,6 +1994,7 @@ int qblk_line_get_first_data(struct qblk *qblk)
 			 * Only allow as many writes in as we can store safely and then
 			 * fail gracefully
 			 */
+			//TODO: fail gracefully
 			//pblk_set_space_limit(pblk);
 			//chi->data_next = NULL;
 			pr_err("qblk can't allocate data next\n");
@@ -2040,17 +2005,23 @@ int qblk_line_get_first_data(struct qblk *qblk)
 
 		spin_unlock(&chi->free_lock);
 		if (qblk_line_erase(qblk, ch_idx, line)) {
-			/*line = pblk_line_retry(pblk, line);//----
+			//TODO: retry
+#if 0
+			line = pblk_line_retry(pblk, line);
 			if (!line)
-				return NULL;*/
+				return NULL;
+#endif
 			pr_err("%s,line(%d),qblk_line_erase() failed\n",
 						__func__, __LINE__);
 			return -EIO;
 		}
 		if (qblk_line_erase(qblk, ch_idx, nextline)) {
-			/*line = pblk_line_retry(pblk, line);//----
+			//TODO: retry
+#if 0
+			line = pblk_line_retry(pblk, line);
 			if (!line)
-				return NULL;*/
+				return NULL;
+#endif
 			pr_err("%s,line(%d),qblk_line_erase() failed\n",
 						__func__, __LINE__);
 			return -EIO;
@@ -2058,22 +2029,28 @@ int qblk_line_get_first_data(struct qblk *qblk)
 
 	//retry_setup:
 		if (!qblk_line_init_metadata(qblk, chi, line, NULL)) {
-			/*line = pblk_line_retry(pblk, line);
+			//TODO: retry
+#if 0
+			line = pblk_line_retry(pblk, line);
 			if (!line)
 				return NULL;
 
-			goto retry_setup;*/
+			goto retry_setup;
+#endif
 			pr_err("%s,line(%d),qblk_line_init_metadata() failed\n",
 							__func__, __LINE__);
 			return -ENOSPC;
 		}
 
 		if (!qblk_line_init_bb(qblk, chi, line, 1)) {
-			/*line = pblk_line_retry(pblk, line);//---
+			//TODO: retry
+#if 0
+			line = pblk_line_retry(pblk, line);
 			if (!line)
 				return NULL;
 
-			goto retry_setup;*/
+			goto retry_setup;
+#endif
 			pr_err("%s,line(%d),qblk init bb failed\n",
 							__func__, __LINE__);
 			return -ENOSPC;

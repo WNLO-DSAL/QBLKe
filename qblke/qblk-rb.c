@@ -780,8 +780,7 @@ blk_status_t qblk_rq_write_to_cache(struct qblk *qblk,
 			qblk_per_rb_account(qblk, rbIndex, QBLK_USR_ACCEPTED, nr_entries);
 			break;
 		case -2:
-			/*pblk_pipeline_stop(pblk);*/ //---
-			//pr_notice("%s,return with -1\n",__func__);
+			//err
 			return BLK_STS_IOERR;
 		case 1:
 			//pr_notice("%s,return with 1(Rate limiter may not insert)\n", __func__);

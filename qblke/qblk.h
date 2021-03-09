@@ -6,11 +6,6 @@
 //Uncomment if we need to measure func latency via bcc
 //#define QBLKE_FUNCLATENCY
 
-/* Number of reader ring entries per cpu. Must be power of two.
- * Current cannot be more than 128. (Because of u8 in struct qblk_reader_ring)
- */
-#define QBLKE_READER_RING_ENTRIES_PERCPU (16)
-
 #define DEBUGCHNLS (0)
 #define QBLK_DEBUG_ENTRIES_PER_CHNL (16)
 #define QBLK_PRINT_ENTRIES_PER_CPU (16)
@@ -66,9 +61,6 @@
 #define GC_TIME_MSECS (1000)
 
 #define WRITE_LIMITER_MSECS (100)
-
-#define QBLK_MAX_READ_COALESCE (1)
-#define QBLKE_READER_RING_MASK ((QBLKE_READER_RING_ENTRIES_PERCPU) - 1)
 
 #define QBLK_SECTOR (512)
 #define QBLK_EXPOSED_PAGE_SIZE (4096)
@@ -173,12 +165,11 @@ struct qblk_g_ctx {
 	int logindex;
 	int ch_index;
 #endif
-	struct request *requests[QBLK_MAX_READ_COALESCE];
 };
 
 /* Recovery context */
 struct qblk_rec_ctx {
-	struct qblk *pblk;
+	struct qblk *qblk;
 	struct nvm_rq *rqd;
 	struct list_head failed;
 	struct work_struct ws_rec;
@@ -393,7 +384,7 @@ enum {
 
 struct line_header {
 	__le32 crc;
-	__le32 identifier;	/* pblk identifier */
+	__le32 identifier;	/* qblk identifier */
 	__u8 uuid[16];		/* instance uuid */
 	__le16 type;		/* line type */
 	__le16 version;		/* type version */
@@ -768,33 +759,6 @@ struct qblk_per_rb_accounting {
 	atomic_t entries[QBLK_RB_ACCOUNTING_ENTRIES];
 };
 
-struct qblk_read_vector {
-	struct list_head list;
-	struct page *page;
-	struct ppa_addr ppa;
-};
-
-#define QBLKE_RR_INDEX(x) ((x) & QBLKE_READER_RING_MASK)
-
-enum {
-	QBLK_RE_FREE = 0,
-	QBLK_RE_FILLED = 1,
-	QBLK_RE_SUBMITTED = 2,
-};
-struct qblk_r_ring_entry {
-	struct list_head vector_pairs;
-	struct request *req;
-	u8 nr_vectors;
-};
-
-struct qblk_reader_ring {
-	struct qblk *qblk;
-	u8 tail;
-	u8 head;
-	struct task_struct *rr_reader_ts;
-	struct qblk_r_ring_entry entries[QBLKE_READER_RING_ENTRIES_PERCPU];
-};
-
 struct qblk {
 	struct nvm_tgt_dev *dev;
 	struct gendisk *disk;
@@ -910,9 +874,6 @@ struct qblk {
 	spinlock_t gc_active_lock;
 	int gc_active_size;
 	unsigned long *gc_active;
-
-	/* Reader Ring */
-	struct qblk_reader_ring __percpu *reader_rings;
 
 	/* Write Limiter */
 	struct workqueue_struct *qblk_write_limiter_wq;
@@ -1690,7 +1651,6 @@ struct nvm_rq *qblk_alloc_rqd_nowait(struct qblk *qblk, int type);
 void qblk_free_rqd(struct qblk *qblk, struct nvm_rq *rqd, int type);
 int qblk_submit_io(struct qblk *qblk, struct nvm_rq *rqd);
 int qblk_submit_io_for_ioset(struct qblk *qblk, struct nvm_rq *rqd);
-int qblk_submit_io_for_readerring(struct qblk *qblk, struct nvm_rq *rqd);
 int qblk_submit_io_for_partialread(struct qblk *qblk, struct nvm_rq *rqd);
 int qblk_submit_io_nowait(struct qblk *qblk, struct nvm_rq *rqd);
 int qblk_submit_io_sync(struct qblk *qblk, struct nvm_rq *rqd);
@@ -1717,25 +1677,12 @@ struct ppa_addr qblk_lookup_l2p(struct qblk *qblk,
 #endif
 
 /* qblk-read.c */
-extern struct kmem_cache *qblk_rv_cache;
-#ifdef QBLKE_FUNCLATENCY
-QBLKE_SHOULD_INLINE blk_status_t qblk_do_read_req_nowait(struct qblk *qblk,
-											struct qblk_reader_ring *rr,
-											struct request *req,
-											sector_t blba,
-											u8 head,
-											u8 tail);
-#endif
 void __qblk_end_req_io_read(struct qblk *qblk,
 			struct request *req);
-blk_status_t qblk_read_req_nowait_readerring(struct request_queue *q,
-					struct qblk *qblk, struct qblk_queue *pq,
-					struct request *req);
 blk_status_t qblk_read_req_nowait(struct request_queue *q,
 					struct qblk *qblk, struct qblk_queue *pq,
 					struct request *req);
 int qblk_submit_read_gc(struct qblk_gc *gc, struct qblk_gc_rq *gc_rq);
-int qblk_rr_reader_thread_fn(void *data);
 
 
 /* qblk-write.c */

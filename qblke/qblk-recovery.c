@@ -62,9 +62,12 @@ int qblk_recov_l2p(struct qblk *qblk)
 			if (le32_to_cpu(smeta_buf->header.identifier)
 							!= QBLK_MAGIC)
 				continue;
+
+			//For now, QBLKe only supports a fresh setup.
+#if 0
 			pr_err("%s, found lines, i = %d\n",
 								__func__, i);
-#if 0
+
 			if (smeta_buf->header.version != SMETA_VERSION) {
 				pr_err("qblk: found incompatible line version %u\n",
 						le16_to_cpu(smeta_buf->header.version));
@@ -119,7 +122,7 @@ int qblk_recov_l2p(struct qblk *qblk)
 
 			goto next_chnl;
 		}
-		pr_err("%s, found lines!\n", __func__);
+
 #if 0
 		/* Verify closed blocks and recover this portion of L2P table*/
 		list_for_each_entry_safe(line, tline, &recov_list, list) {
