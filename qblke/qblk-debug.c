@@ -3,6 +3,28 @@
 #define TEST_SECS_PER_REQ (8)
 #define TEST_SECS_ORDER_PER_REQ (3)
 
+//frequency
+#define QBLK_TRACKER_F (99)
+//interval in ms (1000/99, avoid 10)
+#define QBLK_TRACKER_INTERVAL (11)
+
+struct qblk_track_entry {
+	union {
+		char nr_gc;
+	};
+};
+
+struct qblk_tracker {
+	struct delayed_work dw;
+	struct qblk *qblk;
+	atomic_t running;
+	void *track_data;
+	char track_type;
+	unsigned long track_index;
+	unsigned long max_index;
+}qblk_global_tracker;
+
+
 struct qblk_debug_tracker {
 	struct delayed_work dw;
 	struct qblk *qblk;
@@ -1335,6 +1357,7 @@ static void qblk_tracker_work_fn(struct work_struct *work) {
 	kfree(tracker);
 }
 #endif
+
 /* usage: "tr"*/
 void qblk_track(struct qblk *qblk) {
 	struct qblk_debug_tracker *tracker = kmalloc(sizeof(*tracker), GFP_KERNEL);
@@ -1348,6 +1371,102 @@ void qblk_track(struct qblk *qblk) {
 
 	INIT_DELAYED_WORK(&tracker->dw, qblk_tracker_work_fn);
 	schedule_delayed_work(&tracker->dw, 0);
+}
+
+static void track_fill_chnl(struct qblk *qblk,
+					struct qblk_track_entry *array)
+{
+	array[qblk_global_tracker.track_index].nr_gc =
+					(char)bitmap_weight(qblk->gc_active, qblk->gc_active_size);
+}
+
+/*
+ * Print in a per second basis.
+ */
+static void track_print_chnl(struct qblk *qblk,
+					struct qblk_track_entry *array)
+{
+	int i;
+	unsigned long counts[33];
+	int tmp;
+
+	for (i = 0; i < 33; i++)
+		counts[i] = 0;
+	
+	for (i = 0; i < qblk_global_tracker.max_index; i++) {
+		tmp = array[i].nr_gc;
+		if (unlikely(tmp >= 32))
+			tmp = 32;
+		counts[tmp]++;
+	}
+	for (i = 0; i < 33; i++)
+		pr_notice("QHW: %s %d counts %ld\n",
+					__func__, i, counts[i]);
+}
+
+static void qblk_track_work_fn(struct work_struct *work)
+{
+	struct qblk_track_entry *array;
+	struct qblk *qblk = qblk_global_tracker.qblk;
+	char type = qblk_global_tracker.track_type;
+
+	array = (struct qblk_track_entry *)qblk_global_tracker.track_data;
+
+	if (qblk_global_tracker.track_index == qblk_global_tracker.max_index) {
+		BUG_ON(qblk_global_tracker.track_index > qblk_global_tracker.max_index);
+		switch (type)
+		{
+		case 'c':
+			track_print_chnl(qblk, array);
+			break;
+		default:
+			WARN_ON(1);
+		}
+		qblk_global_tracker.track_data = NULL;
+		kfree(array);
+		atomic_set_release(&qblk_global_tracker.running, 0);
+		return;
+	}
+	switch (type)
+	{
+	case 'c':
+		track_fill_chnl(qblk, array);
+		break;
+	default:
+		;
+	}
+	qblk_global_tracker.track_index++;
+	schedule_delayed_work(&qblk_global_tracker.dw, QBLK_TRACKER_INTERVAL);
+}
+
+/*
+ * Usage: "ttc seconds"
+ * e.g., ttc 60
+ */
+static void qblk_track2(struct qblk *qblk, char *usrCommand)
+{
+	char type = usrCommand[0];
+	unsigned int seconds;
+
+	sscanf(&usrCommand[1], "%d", &seconds);
+
+	if (atomic_cmpxchg(&qblk_global_tracker.running, 0, 1))
+		return;
+	qblk_global_tracker.track_type = type;
+	qblk_global_tracker.track_index = 0;
+	qblk_global_tracker.max_index = seconds * QBLK_TRACKER_F;
+	INIT_DELAYED_WORK(&qblk_global_tracker.dw, qblk_track_work_fn);
+	qblk_global_tracker.track_data = kmalloc_array(qblk_global_tracker.max_index,
+								sizeof(struct qblk_track_entry),
+								GFP_KERNEL);
+	if (!qblk_global_tracker.track_data) {
+		pr_notice("%s, allocate mem failed, wanted=%ld, each=%ld\n",
+					__func__, qblk_global_tracker.max_index,
+					sizeof(struct qblk_track_entry));
+		atomic_set_release(&qblk_global_tracker.running, 0);
+		return;
+	}
+	schedule_delayed_work(&qblk_global_tracker.dw, QBLK_TRACKER_INTERVAL);
 }
 
 /* usage: "x 1/0"*/
@@ -1597,6 +1716,10 @@ static ssize_t qblkDebug_write(struct file *file,
 			pr_notice("%s, track\n", __func__);
 			qblk_track(qblk);
 			break;
+		} else if (usrCommand[1] == 't') {
+			pr_notice("%s, lrks track\n", __func__);
+			qblk_track2(qblk, &usrCommand[2]);
+			break;
 		}
 	case 'x':
 		pr_notice("%s, x\n", __func__);
@@ -1719,6 +1842,9 @@ void qblk_debug_init(struct qblk *qblk)
 #ifdef QBLKe_DEBUG
 	qblk->printHeaders = NULL;
 #endif
+
+	atomic_set(&qblk_global_tracker.running, 0);
+	qblk_global_tracker.qblk = qblk;
 
 	spin_lock_init(&qblk->debug_printing_lock);
 	i = 0;
