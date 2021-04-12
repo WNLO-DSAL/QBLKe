@@ -1077,6 +1077,17 @@ static void qblk_set_sema(struct qblk *qblk, char *usrCommand)
 				__func__, smax, smin);
 }
 
+/* usage: "sg"*/
+static void qblk_get_sema(struct qblk *qblk, char *usrCommand)
+{
+	int smax, smin;
+
+	smax = READ_ONCE(qblk->sema_max);
+	smin = READ_ONCE(qblk->sema_min);
+	pr_notice("%s, max %d, min %d\n",
+				__func__, smax, smin);
+}
+
 
 static void __print_gc_info(struct qblk *qblk, int ch_idx)
 {
@@ -1702,6 +1713,9 @@ static ssize_t qblkDebug_write(struct file *file,
 	case 's':
 		if (usrCommand[1] == 'e') {
 			qblk_set_sema(qblk, &usrCommand[2]);
+			break;
+		} else if (usrCommand[1] == 'g') {
+			qblk_get_sema(qblk, &usrCommand[2]);
 			break;
 		}
 		pr_notice("%s, s\n", __func__);
