@@ -32,6 +32,8 @@
 
 #define QBLK_MIN_THRES (32)
 
+#define QBLK_PROFILE_GC
+
 //#define QBLKe_STAT_LINE_ERASECOUNT
 
 #include <linux/blkdev.h>

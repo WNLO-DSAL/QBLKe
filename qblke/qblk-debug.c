@@ -1750,6 +1750,45 @@ static ssize_t qblkDebug_write(struct file *file,
 	return count;
 }
 
+#ifdef QBLK_PROFILE_GC
+static int qblk_get_nr_gc(struct qblk *qblk)
+{
+	int i;
+	int nr_active = 0;
+
+	for (i = 0; i < qblk->nr_channels; i++) {
+		struct ch_info *chi = &qblk->ch[i];
+		struct qblk_gc *gc = chi->gc;
+
+		if (atomic_read(&gc->nr_gc_lines))
+			nr_active++;
+	}
+	return nr_active;
+}
+
+/* Format: nr_gc */
+static ssize_t qblkDebug_read(struct file *file, char __user *buffer, size_t count, loff_t *ppos)
+{
+	struct qblk *qblk = debugqblk;
+	char kbuf[64];
+	int written;
+	void *p = kbuf;
+	int ret;
+	int nr_gc;
+
+	nr_gc = qblk_get_nr_gc(qblk);
+	written = snprintf(p, 64, "%d\n", nr_gc);
+
+	if (count >= written)
+		ret = copy_to_user(buffer, kbuf, written);
+	else
+		ret = copy_to_user(buffer, kbuf, count);
+
+	if (ret)
+		return EFAULT;
+	return (count >= written)?written:count;
+}
+#else
 static void qblk_fill_status(struct qblk *qblk, void *qblk_status)
 {
 	int nr_rb = qblk->nr_queues;
@@ -1832,6 +1871,7 @@ static ssize_t qblkDebug_read(struct file *file, char __user *buffer, size_t cou
 		return EFAULT;
 	return (count >= status_size)?status_size:count;
 }
+#endif
 
 static const struct file_operations qblkDebug_proc_fops = {
   .owner = THIS_MODULE,
