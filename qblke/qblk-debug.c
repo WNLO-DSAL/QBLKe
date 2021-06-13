@@ -1686,11 +1686,11 @@ static ssize_t qblkDebug_write(struct file *file,
 				qblk_print_debug(qblk, i, 1);
 			break;
 		} else if (usrCommand[1] == 'a') {
-			pr_notice("%s, ppa\n", __func__);
+			pr_notice("%s, pa\n", __func__);
 			qblk_debug_print_all(qblk);
 			break;
 		} else if (usrCommand[1] == 'r') {
-			pr_notice("%s, ppr\n", __func__);
+			pr_notice("%s, pr\n", __func__);
 			qblk_debug_reset_all(qblk);
 			break;
 		}

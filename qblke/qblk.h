@@ -10,7 +10,7 @@
 
 #define DEBUGCHNLS (0)
 #define QBLK_DEBUG_ENTRIES_PER_CHNL (16)
-#define QBLK_PRINT_ENTRIES_PER_CPU (16)
+#define QBLK_PRINT_ENTRIES_PER_CPU (256)
 
 
 /* Uncomment to monitor time */
