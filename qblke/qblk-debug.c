@@ -1770,14 +1770,48 @@ static int qblk_get_nr_gc(struct qblk *qblk)
 static ssize_t qblkDebug_read(struct file *file, char __user *buffer, size_t count, loff_t *ppos)
 {
 	struct qblk *qblk = debugqblk;
-	char kbuf[64];
+	char kbuf[256];
 	int written;
 	void *p = kbuf;
 	int ret;
 	int nr_gc;
+	int i;
+	int nr_rb = qblk->nr_queues;
+	unsigned int mem, sync;
+	int left;
+	int tmp;
+	struct qblk_rb *rb;
 
 	nr_gc = qblk_get_nr_gc(qblk);
-	written = snprintf(p, 64, "%d\n", nr_gc);
+	written = snprintf(p, 256, "%d ", nr_gc);
+	p+=written;
+	left = 256 - written;
+
+//rb inflight entries
+	for (i = 0; i < nr_rb; i++) {
+		rb = qblk_get_rb_by_cpuid(qblk, i);
+
+		sync = READ_ONCE(rb->sync);
+		mem = READ_ONCE(rb->mem);
+		tmp = snprintf(p, left, "%u ", mem-sync);
+		p += tmp;
+		left -= tmp;
+		written += tmp;
+		if (left <= 2)
+			break;
+	}
+
+	if (left <= 2) {
+		//unlikely
+		p = kbuf;
+		written = snprintf(p, 256, "%d\n", nr_gc);
+	} else {
+		tmp = snprintf(p, left, "\n");
+		written += tmp;
+	}
+
+
+
 
 	if (count >= written)
 		ret = copy_to_user(buffer, kbuf, written);
